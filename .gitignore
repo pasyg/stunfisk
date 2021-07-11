@@ -1,5 +1,3 @@
-/config/*
-!/config/formats.ts
 /node_modules
 package-lock.json
 /tools/set-import/sets
