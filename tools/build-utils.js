@@ -212,14 +212,6 @@ exports.transpile = (doForce) => {
 
 	sucrase('./lib', './.lib-dist');
 
-	if (sucrase('./server', './.server-dist')) {
-		replace('.server-dist', [
-			{regex: /(require\(.*?)(data|lib|sim)/g, replace: `$1.$2-dist`},
-		]);
-	}
-
-	sucrase('./translations', './.translations-dist');
-
 	if (sucrase('./tools/set-import', './tools/set-import', null, ['sets'])) {
 		replace('./tools/set-import/importer.js', [
 			{regex: /(require\(.*?)(lib|sim)/g, replace: `$1.$2-dist`},
