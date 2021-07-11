@@ -1,6 +1,6 @@
 import RandomGen4Teams from '../gen4/random-teams';
 import {PRNG, PRNGSeed} from '../../../sim/prng';
-import {Items} from './items';
+import {Dex, toID} from '../../../sim/dex';
 
 export class RandomGen3Teams extends RandomGen4Teams {
 	battleHasDitto: boolean;
@@ -34,17 +34,33 @@ export class RandomGen3Teams extends RandomGen4Teams {
 		};
 	}
 
-	getItem() {
-		let validItems = [];
-		for (const i in Items) {
-			var item : ModdedItemData = Items[i];
-			if (item.gen == 3 && !item.hasOwnProperty('isNonstandard')){
-				validItems.push(item.name);
-			}
-		}
+	randomItem() {
+		const validItems = [
+		'Aguav Berry',  'Apicot Berry', 'Aspear Berry',   
+		'Cheri Berry',  'Chesto Berry',   'Choice Band',
+		'Deep Sea Scale', 'Deep Sea Tooth',
+
+		'Figy Berry',   'Ganlon Berry',  
+		'Iapapa Berry',    
+		'Lax Incense',  'Leppa Berry',  'Liechi Berry',   'Lum Berry',
+		'Macho Brace',  'Mago Berry',     
+		'Mental Herb',    
+		'Oran Berry',     
+		'Pecha Berry',  'Persim Berry', 'Petaya Berry',  
+
+		'Rawst Berry',         
+		'Salac Berry',  'Sea Incense',  'Shell Bell',     'Silk Scarf',
+		'Sitrus Berry',        'Starf Berry',
+		
+		'White Herb',   'Wiki Berry',
+		'Pokeball', '',
+		];
 		return validItems[validItems.length * Math.random() << 0];
 	}
-	//Inefficient. Filters all items for each call
+
+	randomNature(){
+		return Dex.natures.all().map(x => x.name)[25 * Math.random() << 0];
+	}
 
 	randomInt(min : number, max : number) {
 		const num = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -59,14 +75,14 @@ export class RandomGen3Teams extends RandomGen4Teams {
 		return evs;
 	}
 
-	validateEVS(evs : Array<number>){
+	validateEVs(evs : Array<number>){
 		return evs.every(x => (x < 64)) && evs.reduce((a, b) => a + b) < 128;
 	}
 
-	getRandomEVs(){
+	randomEVs(){
 		for(let i = 0; i < 100; ++i){
 			let evs = this.randomEVSample();
-			if (this.validateEVS(evs)) {
+			if (this.validateEVs(evs)) {
 				return {hp: evs[0]*4, atk: evs[1]*4, def: evs[2]*4, spa: evs[3]*4, spd: evs[4]*4, spe: evs[5]*4};
 			}
 		}
@@ -88,7 +104,7 @@ export class RandomGen3Teams extends RandomGen4Teams {
 		let forme = species.name;
 		if (typeof species.battleOnly === 'string') forme = species.battleOnly;
 
-		const evs = this.getRandomEVs();
+		const evs = this.randomEVs();
 		const ivs = {hp: this.randomInt(0, 31), 
 			atk: this.randomInt(0, 31), 
 			def: this.randomInt(0, 31),
@@ -114,7 +130,7 @@ export class RandomGen3Teams extends RandomGen4Teams {
 		}
 		const ability = ability0.name;
 
-		const item = this.getItem();
+		const item = this.randomItem();
 
 		let level = this.randomInt(5, 100);
 
@@ -124,6 +140,7 @@ export class RandomGen3Teams extends RandomGen4Teams {
 			gender: species.gender,
 			moves: Array.from(moves),
 			ability: ability,
+			nature: this.randomNature(),
 			evs: evs,
 			ivs: ivs,
 			item: item,
