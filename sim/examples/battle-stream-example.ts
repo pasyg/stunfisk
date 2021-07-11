@@ -21,13 +21,19 @@ const streams = getPlayerStreams(new BattleStream());
 const spec = {
 	formatid: "gen3customgame",
 };
+
+const p1Team = Teams.generate('gen3randombattle');
+const p2Team = Teams.generate('gen3randombattle');
+console.log(p1Team);
+console.log(p2Team);
+
 const p1spec = {
 	name: "Bot 1",
-	team: Teams.pack(Teams.generate('gen3randombattle')),
+	team: Teams.pack(p1Team),
 };
 const p2spec = {
 	name: "Bot 2",
-	team: Teams.pack(Teams.generate('gen3randombattle')),
+	team: Teams.pack(p2Team),
 };
 
 const p1 = new RandomPlayerAI(streams.p1);
