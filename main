@@ -1,0 +1,50 @@
+
+ async function f() {
+    var BattleStreams = require('./.sim-dist/battle-stream')
+    var Streams = require('./.lib-dist/streams')
+    var AI = require('./.sim-dist/tools/random-player-ai')
+    var stdin = Streams.stdin()
+    var stdout = Streams.stdout()
+
+    var args = process.argv.slice(3);
+
+    var options = args.flatMap(function (arg) {
+        if (arg.charAt(0) !== '-') {
+            if (arg) console.error("Invalid parameter: " + arg);
+            return [];
+        } else if (arg.charAt(1) === '-') {
+            return arg.slice(2);
+        } else {
+            return Array.from(arg.slice(1));
+        }
+    });
+
+    var battleStream = new BattleStreams.BattleStream()
+    var streams = new BattleStreams.getPlayerStreams(battleStream)
+    //console.log(Object.keys(streams))
+
+    //battleStream.write('>start {"formatid" : "gen3randombattle"} \n')
+    //battleStream.write('>player p1 {}\n')
+    //battleStream.write('>player p2 {}\n'))
+
+    var q1 = new AI.RandomPlayerAI(streams.p1)
+    var q2 = new AI.RandomPlayerAI(streams.p2)
+
+    q1.start()
+    q2.start()
+
+    streams.omniscient.write('>start {"formatid" : "gen3randombattle"}\n')
+    streams.omniscient.write('>player p1 {}\n')
+    streams.omniscient.write('>player p2 {}\n')
+
+    //stdin.pipeTo(battleStream)
+    for await (const chunk of streams.omniscient) {
+		console.log(chunk);
+	}
+}
+
+for(var i = 0; i < 20; i++){
+    f()
+}
+
+console.log('end of file')
