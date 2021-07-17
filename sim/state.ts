@@ -95,7 +95,7 @@ export const State = new class {
 		for (const side of state.sides) {
 			// When we instantiate the Battle again we need the pokemon to be in
 			// the correct order they were in at the start of the Battle which was
-			// serialized. See serializeSide below for an explanation about the
+			// d. See serializeSide below for an explanation about the
 			// encoding format used deserializeSide for where we reorder the Side's
 			// pokemon to match their ordering at the point of serialization.
 			const team = side.team.split(side.team.length > 9 ? ',' : '');

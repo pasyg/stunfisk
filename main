@@ -1,31 +1,49 @@
+var BattleStreams = require('./.sim-dist/battle-stream')
+var Streams = require('./.lib-dist/streams')
+var AI = require('./.sim-dist/tools/random-player-ai')
 
- async function f() {
-    var BattleStreams = require('./.sim-dist/battle-stream')
-    var Streams = require('./.lib-dist/streams')
-    var AI = require('./.sim-dist/tools/random-player-ai')
-    var stdin = Streams.stdin()
-    var stdout = Streams.stdout()
+function parseStage(battle){
+    console.log('weather', battle.field.weatherState.hasOwnProperty('id') ? battle.field.weatherState['id'] : '')
+    console.log('duration', battle.field.weatherState.hasOwnProperty('duration') ? battle.field.weatherState['duration'] : '')
+    var spikes0 = Object.hasOwnProperty(battle.sides[0]) ? battle.sides[0].sideConditions['spikes'] : 0
+    var spikes1 = Object.hasOwnProperty(battle.sides[1]) ? battle.sides[1].sideConditions['spikes'] : 0
+    var weather
+    var weatherDuration
 
-    var args = process.argv.slice(3);
+}
 
-    var options = args.flatMap(function (arg) {
-        if (arg.charAt(0) !== '-') {
-            if (arg) console.error("Invalid parameter: " + arg);
-            return [];
-        } else if (arg.charAt(1) === '-') {
-            return arg.slice(2);
-        } else {
-            return Array.from(arg.slice(1));
-        }
-    });
+function parsePokemon(pokemon){
+    //console.log('position', pokemon.position)
+    console.log('species', pokemon.species.num)
+    console.log('level', pokemon.level)
+    console.log('gender', pokemon.gender)
+    console.log('ev', pokemon.set.evs)
+    console.log('iv', pokemon.set.ivs)
+    console.log('nature', pokemon.set.nature)
+    console.log('storedStats', pokemon.storedStats)
+    console.log('baseMoveSlots', Object.keys(pokemon.baseMoveSlots))
+    console.log('maxhp', pokemon.maxhp)
+    console.log('hp', pokemon.hp)
+    console.log('baseAbility', pokemon.baseAbility)
+    console.log('item', pokemon.item)
+    console.log('status', pokemon.status)
+}
+
+function parseActive(pokemon){
+    console.log('boosts', pokemon.boosts)
+    console.log('ability', pokemon.ability)
+    console.log('moveSlots', Object.keys(pokemon.moveSlots))
+}
+
+function parseTeams(battle){
+    console.log(battle.sides[0].team)
+    console.log(battle.sides[1].team)
+}
+
+async function simulateBattle(array) {
 
     var battleStream = new BattleStreams.BattleStream()
     var streams = new BattleStreams.getPlayerStreams(battleStream)
-    //console.log(Object.keys(streams))
-
-    //battleStream.write('>start {"formatid" : "gen3randombattle"} \n')
-    //battleStream.write('>player p1 {}\n')
-    //battleStream.write('>player p2 {}\n'))
 
     var q1 = new AI.RandomPlayerAI(streams.p1)
     var q2 = new AI.RandomPlayerAI(streams.p2)
@@ -37,14 +55,30 @@
     streams.omniscient.write('>player p1 {}\n')
     streams.omniscient.write('>player p2 {}\n')
 
-    //stdin.pipeTo(battleStream)
+    //parseTeams(battleStream.battle)
+
     for await (const chunk of streams.omniscient) {
-		console.log(chunk);
+        console.log(chunk)
+        
+        console.log('!!!')
+        console.log('')
 	}
-}
+    //the third execution here is the first turn of the game
+    //every execution represents a decision node (not a turn! (know the difference!))
 
-for(var i = 0; i < 20; i++){
-    f()
 }
+ 
+const readline = require("readline")
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
 
-console.log('end of file')
+rl.on("line", async (line) => {
+    var array = []
+    await simulateBattle(array)
+    //array.slice(2).map(parse)
+    rl.prompt()
+})
+
+rl.prompt()
