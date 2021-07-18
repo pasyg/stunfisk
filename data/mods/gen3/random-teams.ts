@@ -112,8 +112,10 @@ export class RandomGen3Teams extends RandomGen4Teams {
 			spd: this.randomInt(0, 31),
 			spe: this.randomInt(0, 31)};
 		
+		var forceMoves = teamDetails.forceMoves ? teamDetails.forceMoves : []
+		var filled = forceMoves.length
 		let movePool = this.extantMoves(this.dex.data.Learnsets[species.id]!.learnset!);
-		const moves = new Set<string>();
+		const moves = new Set<string>(forceMoves);
 		while (moves.size < 4 && movePool.length) {
 			const moveid = this.sampleNoReplace(movePool);
 			moves.add(moveid);
@@ -142,6 +144,7 @@ export class RandomGen3Teams extends RandomGen4Teams {
 			ability: ability,
 			nature: this.randomNature(),
 			evs: evs,
+
 			ivs: ivs,
 			item: item,
 			level,
@@ -150,9 +153,9 @@ export class RandomGen3Teams extends RandomGen4Teams {
 	}
 
 	randomTeam() {
-
 		const seed = this.prng.seed;
 		const pokemon: RandomTeamsTypes.RandomSet[] = [];
+		const forceMons : any[] = []
 
 		// For Monotype
 		const isMonotype = false;
@@ -160,8 +163,6 @@ export class RandomGen3Teams extends RandomGen4Teams {
 		const type = this.forceMonotype || this.sample(typePool);
 
 		const baseFormes: {[k: string]: number} = {};
-
-		const teamDetails: RandomTeamsTypes.TeamDetails = {};
 
 		const pokemonPool = this.getPokemonPool(type, pokemon, isMonotype);
 
@@ -177,9 +178,14 @@ export class RandomGen3Teams extends RandomGen4Teams {
 		}
 		//samples the set of all teams, even < 6, uniformly
 		//however there are more teams the larger they get, so actually 98% of teams are full
-
 		while (pokemonPool.length && pokemon.length < teamSize) {
-			const species = this.dex.species.get(this.sampleNoReplace(pokemonPool));
+			var species : Species
+			if (forceMons.length) {
+				species = this.dex.species.get(forceMons[0])
+				forceMons.shift()
+			}else{
+				species = this.dex.species.get(this.sampleNoReplace(pokemonPool));
+			}
 			if (!species.exists || !species.randomBattleMoves) continue;
 			// Limit to one of each species (Species Clause)
 			if (baseFormes[species.baseSpecies]) continue;
@@ -188,7 +194,7 @@ export class RandomGen3Teams extends RandomGen4Teams {
 			if (tier == "Uber") continue;
 
 			// Okay, the set passes, add it to our team
-			const set = this.randomSet(species, teamDetails);
+			const set = this.randomSet(species, {forceMoves : []});
 			pokemon.push(set);
 
 		}

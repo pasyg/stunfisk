@@ -477,6 +477,7 @@ namespace RandomTeamsTypes {
 		screens?: number;
 		illusion?: number;
 		statusCure?: number;
+		forceMoves?: [];
 	}
 	export interface FactoryTeamDetails {
 		megaCount?: number;

@@ -2,37 +2,41 @@ var BattleStreams = require('./.sim-dist/battle-stream')
 var Streams = require('./.lib-dist/streams')
 var AI = require('./.sim-dist/tools/random-player-ai')
 
-function parseStage(battle){
-    console.log('weather', battle.field.weatherState.hasOwnProperty('id') ? battle.field.weatherState['id'] : '')
-    console.log('duration', battle.field.weatherState.hasOwnProperty('duration') ? battle.field.weatherState['duration'] : '')
-    var spikes0 = Object.hasOwnProperty(battle.sides[0]) ? battle.sides[0].sideConditions['spikes'] : 0
-    var spikes1 = Object.hasOwnProperty(battle.sides[1]) ? battle.sides[1].sideConditions['spikes'] : 0
-    var weather
-    var weatherDuration
-
+function clean(obj){
+    return Object.values(obj).filter(x => x!==Object(x))
 }
 
-function parsePokemon(pokemon){
-    //console.log('position', pokemon.position)
-    console.log('species', pokemon.species.num)
+//TODO: parse function should return strings/packed data
+
+function parsePokemon(pokemon, verbose=true){
+
+    console.log('name', pokemon.species.id)
+    console.log(`hp ${pokemon.hp}/${pokemon.maxhp}`)
     console.log('level', pokemon.level)
-    console.log('gender', pokemon.gender)
-    console.log('ev', pokemon.set.evs)
-    console.log('iv', pokemon.set.ivs)
-    console.log('nature', pokemon.set.nature)
     console.log('storedStats', pokemon.storedStats)
-    console.log('baseMoveSlots', Object.keys(pokemon.baseMoveSlots))
-    console.log('maxhp', pokemon.maxhp)
-    console.log('hp', pokemon.hp)
-    console.log('baseAbility', pokemon.baseAbility)
     console.log('item', pokemon.item)
     console.log('status', pokemon.status)
+
+    if (verbose){
+        console.log('species', pokemon.species.num)
+        console.log('gender', pokemon.gender)
+        console.log('ev', pokemon.set.evs)
+        console.log('iv', pokemon.set.ivs)
+        console.log('nature', pokemon.set.nature)
+        console.log('baseMoveSlots', pokemon.baseMoveSlots.map(move => [move.id, move.pp]))
+        console.log('baseAbility', pokemon.baseAbility)
+        console.log('position', pokemon.position)
+    }
+    
 }
 
 function parseActive(pokemon){
-    console.log('boosts', pokemon.boosts)
     console.log('ability', pokemon.ability)
-    console.log('moveSlots', Object.keys(pokemon.moveSlots))
+    console.log('moveSlots', pokemon.moveSlots.map(move => [move.id, move.pp]))
+    console.log('boosts', pokemon.boosts)
+    console.log('volatiles', Object.values(pokemon.volatiles).map(condition => clean(condition)))
+    console.log('side', Object.values(pokemon.side.sideConditions).map(condition => clean(condition)))
+    console.log('slot', Object.values(pokemon.side.slotConditions[0]).map(condition => clean(condition)))
 }
 
 function parseTeams(battle){
@@ -40,7 +44,38 @@ function parseTeams(battle){
     console.log(battle.sides[1].team)
 }
 
-async function simulateBattle(array) {
+function parseStage(battle){
+    console.log('weather', clean(battle.field.weatherState))
+}
+
+function showMon(mon){
+    console.log(`${mon.level} ${mon.species.id}(${mon.species.num}) ${mon.hp}/${mon.maxhp} ${mon.status}`)
+    console.log(mon.moveSlots.map(move => `(${move.id} : ${move.pp})`).join(' '))
+    console.log(`${mon.item} ${mon.ability}`)
+    console.log(Object.values(mon.storedStats).join(' '))
+    console.log(Object.values(mon.boosts).join(' '))
+
+    console.log(Object.values(mon.volatiles).map(condition => clean(condition)))
+    console.log(Object.values(mon.side.slotConditions[0]).map(condition => clean(condition)))
+    console.log(Object.values(mon.side.sideConditions).map(condition => clean(condition)))
+}
+
+function display(battleStream){
+    const battle = battleStream.battle
+    const active0 = battle.sides[0].active[0]
+    const active1 = battle.sides[1].active[0]
+
+    console.log('_________')
+    parseStage(battle)
+    console.log('___')
+    showMon(active0)
+    console.log('___')
+    showMon(active1)
+    console.log('_________')
+
+}
+
+async function simulateBattle() {
 
     var battleStream = new BattleStreams.BattleStream()
     var streams = new BattleStreams.getPlayerStreams(battleStream)
@@ -57,11 +92,19 @@ async function simulateBattle(array) {
 
     //parseTeams(battleStream.battle)
 
+    display(battleStream) //the loop shows the feed with the state afterwards
+    //imo it is more natural to view it with the state prior
+
+    var showCounter = -1
     for await (const chunk of streams.omniscient) {
-        console.log(chunk)
-        
-        console.log('!!!')
-        console.log('')
+
+        if (showCounter > 0){
+            console.log(chunk)
+            console.log('___________________________')
+            display(battleStream)
+        }
+
+        showCounter += 1
 	}
     //the third execution here is the first turn of the game
     //every execution represents a decision node (not a turn! (know the difference!))
@@ -81,4 +124,5 @@ rl.on("line", async (line) => {
     rl.prompt()
 })
 
+simulateBattle()
 rl.prompt()
