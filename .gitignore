@@ -1,4 +1,5 @@
 /node_modules
+/test
 package-lock.json
 /tools/set-import/sets
 *.o
