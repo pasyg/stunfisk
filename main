@@ -1,5 +1,9 @@
-var BattleStreams = require('./.sim-dist/battle-stream')
-var AI = require('./.sim-dist/tools/random-player-ai')
+let BattleStreams = require('./pokemon-showdown-master/.sim-dist/battle-stream')
+let AI = require('./pokemon-showdown-master/.sim-dist/tools/random-player-ai')
+let Dex = require('./pokemon-showdown-master/.sim-dist/dex')
+let CustomTeams = require('./uniform-random-teams')
+
+const randbat = new CustomTeams.RandomGen3Teams(Dex.Dex.formats.get('gen3randombattle'))
 
 function clean(obj){
     return Object.values(obj).filter(x => x!==Object(x))
@@ -7,12 +11,8 @@ function clean(obj){
 
 function fastParse(battleStream){
 
-    const battle = battleStream.battle
-    var string = '%\n' //to be updated after 
-    string += JSON.stringify(clean(battle.field.weatherState)) + '\n'
-    
     function fastParseMon(mon){
-        var s = ""
+        let s = ""
         s += `${mon.level},${mon.species.num},${mon.gender},${mon.hp},${mon.maxhp},${mon.status},${mon.item},${mon.ability}\n`
         s += mon.moveSlots.map(move => `(${move.id} : ${move.pp})`).join(' ') + '\n'
         s += Object.values(mon.storedStats).join(' ') + '\n'
@@ -20,9 +20,9 @@ function fastParse(battleStream){
     }
 
     function fastParseTeam(pokemon){
-        var s = ""
-        for (var i = 0 ; i < pokemon.length; ++i){
-            var mon = pokemon[i]
+        let s = ""
+        for (let i = 0 ; i < pokemon.length; ++i){
+            let mon = pokemon[i]
             if (i == 0){
                 s += JSON.stringify(Object.values(mon.volatiles).map(condition => clean(condition))) + '\n'
                 s += JSON.stringify((Object.values(mon.side.slotConditions[0]).map(condition => clean(condition)))) + '\n'
@@ -34,6 +34,10 @@ function fastParse(battleStream){
         return s
     }
 
+    const battle = battleStream.battle
+    let string = '%\n' //to be updated after 
+    string += JSON.stringify(clean(battle.field.weatherState)) + '\n'
+
     string += fastParseTeam(battle.sides[0].pokemon)
     string += '|\n'
     string += fastParseTeam(battle.sides[1].pokemon)
@@ -44,22 +48,19 @@ function fastParse(battleStream){
 
 async function simulateBattle() {
 
-    results = []
-
-    var battleStream = new BattleStreams.BattleStream()
-    var streams = new BattleStreams.getPlayerStreams(battleStream)
-
-    var q1 = new AI.RandomPlayerAI(streams.p1)
-    var q2 = new AI.RandomPlayerAI(streams.p2)
-
+    let battleStream = new BattleStreams.BattleStream()
+    let streams = new BattleStreams.getPlayerStreams(battleStream)
+    let q1 = new AI.RandomPlayerAI(streams.p1)
+    let q2 = new AI.RandomPlayerAI(streams.p2)
     q1.start()
     q2.start()
-
     streams.omniscient.write('>start {"formatid" : "gen3randombattle"}\n')
-    streams.omniscient.write('>player p1 {}\n')
-    streams.omniscient.write('>player p2 {}\n')
+    streams.omniscient.write(`>player p1 {}\n`)
+    streams.omniscient.write(`>player p2 {}\n`)
 
-    var showCounter = -1 //keep this for the display function?
+    let results = []
+
+    let showCounter = -1 //keep this for the display function?
     results.push(fastParse(battleStream))
     for await (const chunk of streams.omniscient) {
         if (showCounter > 0){
@@ -71,11 +72,12 @@ async function simulateBattle() {
     return results
 }
 
-void( async() => {
-    //data = []
-    for (let i = 0; i < 1000; ++i){
-        //data = [...data, ...await simulateBattle()]
+
+void (async () => {
+    data = []
+    for (let i = 0; i < 1; ++i){
+        data = [...data, ...await simulateBattle()]
         await simulateBattle()
     }
-    //console.log(...data)
+    console.log(...data)
 })()
