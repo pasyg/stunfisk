@@ -1,6 +1,6 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _randomteams = require('./pokemon-showdown-master/.data-dist/mods/gen4/random-teams');
+"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _randomteams = require('./pokemon-showdown/.data-dist/mods/gen4/random-teams');
 
-var _dex = require('./pokemon-showdown-master/.sim-dist/dex');
+var _dex = require('./pokemon-showdown/.sim-dist/dex');
 
  class RandomGen3Teams extends _randomteams.default {
 	
@@ -110,7 +110,7 @@ var _dex = require('./pokemon-showdown-master/.sim-dist/dex');
 			spd: this.randomInt(0, 31),
 			spe: this.randomInt(0, 31)};
 		
-		var forceMoves = teamDetails.forceMoves ? teamDetails.forceMoves : []
+		let forceMoves = teamDetails.forceMoves ? teamDetails.forceMoves : []
 		let movePool = this.extantMoves(this.dex.data.Learnsets[species.id].learnset);
 		const moves = new Set(forceMoves);
 		while (moves.size < 4 && movePool.length) {

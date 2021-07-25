@@ -1,9 +1,5 @@
-let BattleStreams = require('./pokemon-showdown-master/.sim-dist/battle-stream')
-let AI = require('./pokemon-showdown-master/.sim-dist/tools/random-player-ai')
-let Dex = require('./pokemon-showdown-master/.sim-dist/dex')
-let CustomTeams = require('./uniform-random-teams')
-
-const randbat = new CustomTeams.RandomGen3Teams(Dex.Dex.formats.get('gen3randombattle'))
+let BattleStreams = require('./pokemon-showdown/.sim-dist/battle-stream')
+let AI = require('./pokemon-showdown/.sim-dist/tools/random-player-ai')
 
 function clean(obj){
     return Object.values(obj).filter(x => x!==Object(x))
@@ -75,9 +71,9 @@ async function simulateBattle() {
 
 void (async () => {
     data = []
-    for (let i = 0; i < 1; ++i){
-        data = [...data, ...await simulateBattle()]
+    for (let i = 0; i < 10**2; ++i){
+        //data = [...data, ...await simulateBattle()]
         await simulateBattle()
     }
-    console.log(...data)
+    //console.log(...data)
 })()
