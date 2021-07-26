@@ -1,5 +1,7 @@
+import math
 import random
 import numpy
+import time
 
 class DecisionNode():
     def __init__(self):
@@ -164,16 +166,34 @@ class Display(Search):
 
     def strategiesMatrix(self, strategies):
         strategies
-        A = numpy.matrix(strategies[0]).T
-        B = numpy.matrix(strategies[1])
+        A = numpy.matrix(strategies[0])
+        B = numpy.matrix(strategies[1]).T
         return A, B
 
     def expectedPayoff(self, M, strategies):
         A, B = self.strategiesMatrix(strategies)
-        return numpy.matmul(numpy.matmul(B, M), A)
+        return numpy.matmul(numpy.matmul(A, M), B)
 
     def exploitability(self, M, strategies):
         A, B = self.strategiesMatrix(strategies)
-        return numpy.max(numpy.matmul(B, M)) + numpy.max(numpy.matmul(M, A)) - 2 * numpy.matmul(B, numpy.matmul(M, A))
+        return numpy.max(numpy.matmul(M, B)) - numpy.min(numpy.matmul(A, M))
+
+    def runTimed(self, seconds, dnode, state, gamma=0):
+        ahead = time.time() + seconds
+        while True:
+            self.run(dnode, state, gamma)
+            if time.time() > ahead:
+                return
+
+    def runTimedExpected(self, seconds, dnode, state, gamma=0):
+        ahead = time.time() + seconds
+        while True:
+            self.runExpected(dnode, state, gamma)
+            if time.time() > ahead:
+                return
+
+    def KLDivergence(self, P, Q):
+        return sum(p * math.log(p / q) for p, q in zip(P, self.normalizedPositive([Q])[0]))
+
 
 

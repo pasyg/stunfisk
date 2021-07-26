@@ -3,24 +3,63 @@ import SMTS
 import State
 import numpy
 
-def batch(n, sim):
-    print('batch:', n, sim)
+def batch(n=1, seconds=8):
     state = State.ZeroSumPureTree()
-    state.expand(value=0, depth=4, actions=[[0, 1]], layer=0)
+    state.expand(value=0, depth=4, actions=[[0, 1, 2, 3]], layer=0)
     dnode = state
     search = SMTS.Display()
 
+    KnownExplotability = []
+    ActualExplotability = [] 
+
     for _ in range(n):
 
-        for _ in range(sim): search.runExpected(dnode, state)
+        search.runTimed(seconds, dnode, state)
 
         finalStategy = search.normalizedPositive(dnode.strategies)
-        print(finalStategy)
-        print('M', search.exploitability(state.M, finalStategy))
-        print('chance', search.exploitability(search.valueChanceMatrix(dnode), finalStategy))
+        KnownExplotability.append(search.exploitability(search.valueChanceMatrix(dnode), finalStategy))
+        ActualExplotability.append(search.exploitability(state.M, finalStategy))
 
-        print(state.M)
-        print(search.valueChanceMatrix(dnode))
         state.reset()
 
-batch(1, 10**5)
+    mke = sum(KnownExplotability)/n
+    mae = sum(ActualExplotability)/n
+    vke = sum((_ - mke)**2 for _ in KnownExplotability)
+    vae = sum((_ - mae)**2 for _ in ActualExplotability)
+
+    print('mke', mke)
+    print('mae', mae)
+    print('vke', vke)
+    print('vae', vae)
+
+def batchExpected(n=1, seconds=8):
+    state = State.ZeroSumPureTree()
+    state.expand(value=0, depth=4, actions=[[0, 1, 2, 3]], layer=0)
+    dnode = state
+    search = SMTS.Display()
+
+    KnownExplotability = []
+    ActualExplotability = [] 
+
+    for _ in range(n):
+
+        search.runTimedExpected(seconds, dnode, state)
+
+        finalStategy = search.normalizedPositive(dnode.strategies)
+        KnownExplotability.append(search.exploitability(search.valueChanceMatrix(dnode), finalStategy))
+        ActualExplotability.append(search.exploitability(state.M, finalStategy))
+
+        state.reset()
+
+    mke = sum(KnownExplotability)/n
+    mae = sum(ActualExplotability)/n
+    vke = sum((_ - mke)**2 for _ in KnownExplotability)
+    vae = sum((_ - mae)**2 for _ in ActualExplotability)
+
+    print('mke', mke)
+    print('mae', mae)
+    print('vke', vke)
+    print('vae', vae)
+
+batch(16)
+batchExpected(16)
