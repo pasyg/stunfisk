@@ -1,30 +1,26 @@
+from typing import final
 import SMTS
 import State
 import numpy
 
 def batch(n, sim):
     print('batch:', n, sim)
-
-    s = [[0, 0], [0, 0]]
-    l = []
-    k = []
+    state = State.ZeroSumPureTree()
+    state.expand(value=0, depth=4, actions=[[0, 1]], layer=0)
+    dnode = state
+    search = SMTS.Display()
 
     for _ in range(n):
-        M = numpy.matrix([[0, -1], [-1, 1]]) 
-        state = State.Matrix([[0, 1], [0, 1]], M)
-        dnode = SMTS.DecisionNode()
-        search = SMTS.Search()
-        for _ in range(sim): search.run(dnode, state)
-        sigma = search.normalizedPositive(dnode.strategies)
-        search.accumulate(s, sigma)
-        l.append(sigma)
-        k.append(search.normalizedPositive(dnode.regrets))
 
-    print(search.normalizedPositive(s))
-    return l, k 
+        for _ in range(sim): search.runExpected(dnode, state)
 
-l, k = batch(10, 5000)
-for _, __ in zip(l, k):
-    print(_)
-    print(__)
-    print()
+        finalStategy = search.normalizedPositive(dnode.strategies)
+        print(finalStategy)
+        print('M', search.exploitability(state.M, finalStategy))
+        print('chance', search.exploitability(search.valueChanceMatrix(dnode), finalStategy))
+
+        print(state.M)
+        print(search.valueChanceMatrix(dnode))
+        state.reset()
+
+batch(1, 10**5)

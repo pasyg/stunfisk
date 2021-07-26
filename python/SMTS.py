@@ -1,11 +1,12 @@
 import random
+import numpy
 
 class DecisionNode():
     def __init__(self):
         self.actions =  None
-        self.chance = None
         self.regrets = None
         self.strategies = None
+        self.chance = dict()
 
 class ChanceNode():
     def __init__(self):
@@ -14,8 +15,7 @@ class ChanceNode():
         self.decision = dict()
 
 class Search():
-    def normalizedPositive(self, regrets):
-        epsilon = 10**-3
+    def normalizedPositive(self, regrets, epsilon=10**-3):
         padded = [[max(__, epsilon) for __ in _] for _ in regrets]
         sums = [sum(_) for _ in padded]
         normalized = [[___/__ for ___ in _] for _, __ in zip(padded, sums)]
@@ -38,13 +38,12 @@ class Search():
                 _[i] += __[i]
 
     def expandDecision(self, dnode, state):
-        dnode.actions = state.actions
+        dnode.actions = state.actions_
         dnode.regrets = [[0 for a in A] for A in state.actions]
         dnode.strategies = [[0 for a in A] for A in state.actions]
-        dnode.chance = dict()
-        for i, a in enumerate(dnode.actions[0]):
-            for j, b in enumerate(dnode.actions[1]):
-                dnode.chance[(i, j)] = ChanceNode()
+        #for i, a in enumerate(dnode.actions[0]):
+        #    for j, b in enumerate(dnode.actions[1]):
+        #        dnode.chance[(i, j)] = ChanceNode()
 
     def accessChance(self, cnode, hash):
         if hash in cnode.decision:
@@ -99,83 +98,82 @@ class Search():
         return regrets
 
     def run(self, dnode, state, gamma=0, depth=0):
-        #print('depth:', depth)
         if dnode.actions is None:
             self.expandDecision(dnode, state)
             payoff = state.rollout()
-            #print('node is unexanded', payoff)
-            #print(dnode)
             return payoff
         
         if not all(dnode.actions):
             payoff = state.rollout()
-            #print('node is terminal', payoff)
             return payoff
 
-        #print('regrets', dnode.regrets)
         strategies = self.normalizedPositive(dnode.regrets)
-        #print('strategies', strategies)
+        strategies = self.normalizedPositive(strategies, gamma/4) #noise inversely proportional to action set size... fine for square matrix
         sample = self.sampleDistributions(strategies)
-        #print()
-        #print('sampling:', sample)
         cnode = dnode.chance[sample]
-        #print('cnode', cnode)
-
         state_, hash = state.transition(sample)
-
         dnode_ = self.accessChance(cnode, hash)
-
         payoff = self.run(dnode_, state_, gamma, depth+1)
-
         regrets = self.regretsDecision(dnode, sample, payoff)
 
         self.accumulate(dnode.strategies, strategies)
-
         self.accumulate(dnode.regrets, regrets)
-
         cnode.n += 1
-
         cnode.X += payoff
 
         return self.valueChance(cnode)
 
     def runExpected(self, dnode, state, gamma=0, depth=0):
-            #print('depth:', depth)
-            if dnode.actions is None:
-                self.expandDecision(dnode, state)
-                payoff = state.rollout()
-                #print('node is unexanded', payoff)
-                #print(dnode)
-                return payoff
-            
-            if not all(dnode.actions):
-                payoff = state.rollout()
-                #print('node is terminal', payoff)
-                return payoff
+        if dnode.actions is None:
+            self.expandDecision(dnode, state)
+            payoff = state.rollout()
+            return payoff
+        
+        if not all(dnode.actions):
+            payoff = state.rollout()
+            return payoff
 
-            #print('regrets', dnode.regrets)
-            strategies = self.normalizedPositive(dnode.regrets)
-            #print('strategies', strategies)
-            sample = self.sampleDistributions(strategies)
-            #print()
-            #print('sampling:', sample)
-            cnode = dnode.chance[sample]
-            #print('cnode', cnode)
+        strategies = self.normalizedPositive(dnode.regrets)
+        strategies = self.normalizedPositive(strategies, gamma/4)
+        sample = self.sampleDistributions(strategies)
+        cnode = dnode.chance[sample]
+        state_, hash = state.transition(sample)
+        dnode_ = self.accessChance(cnode, hash)
+        payoff = self.run(dnode_, state_, gamma, depth+1)
+        regrets = self.expectedRegretsDecision(dnode, strategies)
 
-            state_, hash = state.transition(sample)
+        self.accumulate(dnode.strategies, strategies)
+        self.accumulate(dnode.regrets, regrets)
+        cnode.n += 1
+        cnode.X += payoff
 
-            dnode_ = self.accessChance(cnode, hash)
+        return self.valueChance(cnode)
 
-            payoff = self.run(dnode_, state_, gamma, depth+1)
+class Display(Search):
 
-            regrets = self.expectedRegretsDecision(dnode, strategies)
+    def __init__(self, search=None):
+        super().__init__()
 
-            self.accumulate(dnode.strategies, strategies)
+    def valueChanceMatrix(self, dnode):
+        actions = dnode.actions
+        M = numpy.zeros(tuple(map(len, actions)))
+        for a in actions[0]:
+            for b in actions[1]:
+                M[a, b] = round(self.valueChance(dnode.chance[(a,b)]), 4)
+        return M
 
-            self.accumulate(dnode.regrets, regrets)
+    def strategiesMatrix(self, strategies):
+        strategies
+        A = numpy.matrix(strategies[0]).T
+        B = numpy.matrix(strategies[1])
+        return A, B
 
-            cnode.n += 1
+    def expectedPayoff(self, M, strategies):
+        A, B = self.strategiesMatrix(strategies)
+        return numpy.matmul(numpy.matmul(B, M), A)
 
-            cnode.X += payoff
+    def exploitability(self, M, strategies):
+        A, B = self.strategiesMatrix(strategies)
+        return numpy.max(numpy.matmul(B, M)) + numpy.max(numpy.matmul(M, A)) - 2 * numpy.matmul(B, numpy.matmul(M, A))
 
-            return self.valueChance(cnode)
+
