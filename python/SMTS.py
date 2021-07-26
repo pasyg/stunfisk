@@ -180,17 +180,21 @@ class Display(Search):
 
     def runTimed(self, seconds, dnode, state, gamma=0):
         ahead = time.time() + seconds
+        sim = 0
         while True:
             self.run(dnode, state, gamma)
+            sim += 1
             if time.time() > ahead:
-                return
+                return sim
 
     def runTimedExpected(self, seconds, dnode, state, gamma=0):
         ahead = time.time() + seconds
+        sim = 0
         while True:
             self.runExpected(dnode, state, gamma)
+            sim += 1
             if time.time() > ahead:
-                return
+                return sim
 
     def KLDivergence(self, P, Q):
         return sum(p * math.log(p / q) for p, q in zip(P, self.normalizedPositive([Q])[0]))
