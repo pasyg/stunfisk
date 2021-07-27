@@ -64,5 +64,5 @@ def batchExpected(state, n=1, seconds=8):
 state = State.ZeroSumPureTree()
 state.expand(value=0, depth=4, actions=[[0, 1, 2, 3]], layer=0)
 
-print(batch(state, 2**6, 4))
-print(batchExpected(state, 2**6, 4))
+print(batch(state, 2**0, 2**7))
+print(batchExpected(state, 2**0, 2**7))

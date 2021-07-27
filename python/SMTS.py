@@ -57,9 +57,6 @@ class Search():
     def valueChance(self, cnode):
         return cnode.X/(cnode.n + (not cnode.n))
 
-    def strategyDecision(self, dnode):
-        return self.normalizedPositive(dnode.strategies)
-
     def expectedPayoffDecision(self, dnode, strategies):
         u = 0
         for a, p in enumerate(strategies[0]):
@@ -199,5 +196,5 @@ class Display(Search):
     def KLDivergence(self, P, Q):
         return sum(p * math.log(p / q) for p, q in zip(P, self.normalizedPositive([Q])[0]))
 
-
-
+    def runUntilClose(self, dnode):
+        pass
