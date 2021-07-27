@@ -33,7 +33,6 @@ class ZeroSumPureTree(SMTS.DecisionNode):
                 if j == index[1]: upper = value
                 value_ = random.uniform(lower, upper)
                 chance = SMTS.ChanceNode()
-                self.value = value
                 self.M[i,j] = value_
                 self.chance[(i,j)] = chance
                 chance.decision[0] = ZeroSumPureTree()

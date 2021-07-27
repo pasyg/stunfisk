@@ -1,17 +1,16 @@
 const SMTS = require("./SMTS")
 const State = require("./State")
 
-function main(){
-
+function main(n, sim){
     const search = new SMTS.Search
-    for (let i = 0; i < 10**7; ++i){
+    for (let i = 0; i < n; ++i){
         const state = new State.NodeTree()
         const dnode = state
-        search.run(dnode, state)
-        search.run(dnode, state)
+        state.expand(0, 1, [[0,1,2,3,4]], "")
+        console.log(state.actions)
 
+        for (let k = 0; k < sim; ++k) search.run(dnode, state)
     }
-
 }
 
-main()
+main(10**0, 10)
