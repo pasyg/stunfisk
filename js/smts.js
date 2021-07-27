@@ -1,5 +1,3 @@
-const { assert } = require("console")
-
 class DecisionNode { 
     constructor(){
         this.action0 = null
@@ -61,21 +59,22 @@ class Search {
     }
 
     expandDecision(dnode, state){
-        dnode.action0 = state.actions[0]
-        dnode.action1 = state.actions[1]
+        dnode.action0 = state.actions[0].slice()
+        dnode.action1 = state.actions[1].slice()
         const m = dnode.action0.length
         const n = dnode.action1.length
         dnode.regret0 = new Array(m)
         dnode.regret1 = new Array(n)
         dnode.strategy0 = new Array(m)
         dnode.strategy1 = new Array(n)
-        dnode.chance = new Array(m*n)
+
+        //dnode.chance = new Array(m*n)
         for (let i = 0; i < m; ++i){
             dnode.regret0[i] = 0
             dnode.strategy0[i] = 0
-            for (let j = 0; j < n; ++j){
-                dnode.chance[i*n+j] = new ChanceNode()
-            }
+            //for (let j = 0; j < n; ++j){
+            //    dnode.chance[i*n+j] = new ChanceNode()
+            //}
         }
         for (let i = 0; i < n; ++i){
             dnode.regret1[i] = 0
@@ -110,12 +109,12 @@ class Search {
     run(dnode, state){
         if(dnode.action0 === null){
             this.expandDecision(dnode, state)
-            return state.rollout
+            return state.rollout()
         }
         const m = dnode.action0.length
         const n = dnode.action1.length
         if(m === 0 | n === 0){
-            return state.rollout
+            return state.rollout()
         }
         const strategy0 = this.normalizedPositive(dnode.regret0)
         const strategy1 = this.normalizedPositive(dnode.regret1)
@@ -123,12 +122,9 @@ class Search {
         const b = this.sampleNormalized(strategy1)
         const cnode = dnode.chance[a * n + b]
         const [state_, hash] = state.transition(a, b)
-        console.log(state_)
         const dnode_ = this.accessChance(cnode, hash)
-        assert(dnode_ === state_)
-        assert(state_ !== undefined)
         const u = this.run(dnode_, state_)
-        const [regret0, regret1] = this.calculateRegret0(dnode, a, b, m, n, u)
+        const [regret0, regret1] = this.calculateRegrets(dnode, a, b, m, n, u)
         this.accumulate(dnode.regret0, regret0)
         this.accumulate(dnode.regret1, regret1)
         this.accumulate(dnode.strategy0, strategy0)

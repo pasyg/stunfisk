@@ -17,7 +17,9 @@ class NodeTree extends SMTS.DecisionNode {
         this.value = value
         this.actions = [[], []]
         this.name = name
-        if (depth === 0) return
+        if (depth === 0) {
+            return
+        }
         this.actions = this.actions.map(A => actions[Math.floor(Math.random()*actions.length)])
         let shape = this.actions.map(A => A.length)
         this.chance = new Array(shape[0] * shape[1])
@@ -31,11 +33,11 @@ class NodeTree extends SMTS.DecisionNode {
                 if (j == index[1]) upper = value
                 const v = lower + (upper - lower) * Math.random()
                 this.M[i][j] = v
-                const chance = new SMTS.ChanceNode()
-                chance.hash = [0]
-                chance.decision = [new NodeTree()]
-                chance.decision[0].expand(v, depth-1, actions, name + `{${i}#${j}}`)
-                this.chance[i * shape[1] + j] = chance
+                const cnode = new SMTS.ChanceNode()
+                cnode.hash = [0]
+                cnode.decision = [new NodeTree()]
+                cnode.decision[0].expand(v, depth-1, actions, name + `{${i}#${j}}`)
+                this.chance[i * shape[1] + j] = cnode
             }
         }
         this.M = tf.tensor(this.M)

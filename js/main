@@ -6,11 +6,14 @@ function main(n, sim){
     for (let i = 0; i < n; ++i){
         const state = new State.NodeTree()
         const dnode = state
-        state.expand(0, 1, [[0,1,2,3,4]], "")
-        console.log(state.actions)
-
+        state.expand(0, 2, [[0,1,2,3,4]], "")
         for (let k = 0; k < sim; ++k) search.run(dnode, state)
+        console.log(search.normalizedPositive(dnode.strategy0))
+        console.log(search.normalizedPositive(dnode.regret0))
+        console.log(search.normalizedPositive(dnode.strategy1))
+        console.log(search.normalizedPositive(dnode.regret1))
+        state.M.print()
     }
 }
 
-main(10**0, 10)
+main(10**0, 10**7)
