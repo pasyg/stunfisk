@@ -1,29 +1,27 @@
 const SMTS = require("./SMTS")
-const tf = require('@tensorflow/tfjs-node')
-const { math, node } = require("@tensorflow/tfjs-node")
 
-
-
-class NodeTree extends SMTS.DecisionNode {
+//This class behaves as both the State and the DecisionNode
+//This duality is mostly for convenience, but we must store the de facto tree information somewhere
+class NodeGame extends SMTS.DecisionNode {
     constructor(){
         super()
         this.value = null
         this.actions = null
-        this.M = null
-        this.name = null
+        this.matrix = null
+        this.matrixChance = null
+        this.id = null
     }
 
-    expand(value, depth, actions, name=""){
+    initialize(value, depth, actions, depthDecrement=[1], id='{}'){
         this.value = value
         this.actions = [[], []]
-        this.name = name
-        if (depth === 0) {
-            return
-        }
+        this.id = id
+        if (depth <= 0) return
         this.actions = this.actions.map(A => actions[Math.floor(Math.random()*actions.length)])
         let shape = this.actions.map(A => A.length)
         this.chance = new Array(shape[0] * shape[1])
-        this.M = this.actions[0].map(a => new Array(shape[1]))
+        this.matrix = this.actions[0].map(a => new Array(shape[1]))
+        this.matrixChance = this.actions[0].map(a => this.actions[1].map(_=>0))
         const index = shape.map(x => Math.floor(Math.random() * x))
         for (let i = 0; i < shape[0]; ++i){
             for (let j = 0; j < shape[1]; ++j){
@@ -32,22 +30,24 @@ class NodeTree extends SMTS.DecisionNode {
                 if (i == index[0]) lower = value
                 if (j == index[1]) upper = value
                 const v = lower + (upper - lower) * Math.random()
-                this.M[i][j] = v
+                this.matrix[i][j] = v
                 const cnode = new SMTS.ChanceNode()
+                this.chance[i * shape[1] + j] = cnode //used to be last!!!
                 cnode.hash = [0]
-                cnode.decision = [new NodeTree()]
-                cnode.decision[0].expand(v, depth-1, actions, name + `{${i}#${j}}`)
-                this.chance[i * shape[1] + j] = cnode
+                cnode.decision = [new NodeGame()]
+                cnode.decision[0].initialize(
+                    v,
+                    depth-depthDecrement[Math.floor(Math.random()*depthDecrement.length)],
+                    actions,
+                    depthDecrement,
+                    id + `{${i}#${j}}`)
             }
         }
-        this.M = tf.tensor(this.M)
     }
-
     transition(a, b){
         const n = this.actions[1].length
         return [this.chance[a*n + b].decision[0], 0]
     }
-
     rollout(){
         if (this.actions[0].length === 0){
             return this.value
@@ -56,15 +56,18 @@ class NodeTree extends SMTS.DecisionNode {
         const b = Math.floor(Math.random() * this.actions[1].length)
         return this.transition(a, b)[0].rollout()
     }
-
-    ping(){
-        if (this.M === null) return
-        console.log(this.name)
-        this.M.print()
-        for (const cnode of this.chance) cnode.decision[0].ping()
+    print(){
+        if (this.matrix === null) return false
+        console.log(this.value)
+        console.log(this.id)
+        console.log(this.matrix)
+        console.log(this.matrixChance, '\n')
+        return true
     }
-
-    reset(){
+    printTree(){
+        if (this.print()) for (const cnode of this.chance) cnode.decision[0].printTree() //extend hash functionallity 
+    }
+    resetSearchStats(){
         if(this.chance === null) return
         this.action0 = null
         this.action1 = null
@@ -72,13 +75,24 @@ class NodeTree extends SMTS.DecisionNode {
         this.regret1 = null
         this.strategy0 = null
         this.strategy1 = null
+        this.matrixChance = this.actions[0].map(a => this.actions[1].map(_=>0))
         for (const cnode of this.chance) {
             cnode.X = 0
             cnode.n = 0
-            cnode.decision[0].reset()
+            cnode.decision[0].resetSearchStats() //extend hash functionallity 
         }
     }
-
 }
 
-module.exports = {NodeTree}
+const state = new NodeGame()
+state.initialize(0, 1, [[0, 1]])
+
+const search = new SMTS.ExtraSearch()
+for(let j=0;j<10**1;++j){
+    for(let i=0;i<10**7;++i) search.run(state)
+    let x = [...state.matrixChance[0], ...state.matrixChance[1]].map(_=>Math.round(_*1000)/1000)
+    console.log(x.join(' '))
+    state.resetSearchStats()
+}
+
+module.exports = {NodeGame}

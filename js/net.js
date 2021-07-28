@@ -1,4 +1,13 @@
-import * as tf from '@tensorflow/tfjs-node'
+class A{
+    constructor(){}
+    f(){}
+}
 
-const model = tf.keras.sequential()
-console.log(model)
+class B extends A{
+    constructor(){
+        super()
+    }
+    f(){}
+
+}
+new B()
