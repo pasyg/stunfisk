@@ -1,19 +1,35 @@
 const SMTS = require("./SMTS")
 const State = require("./State")
 
-function main(n, sim){
-    const search = new SMTS.Search
+function runAverageTest(n, sim){ //test all 4 configs of search.runAverage. The vanilla seems best by far
+    exploitabilitySums = [0, 0, 0, 0]
     for (let i = 0; i < n; ++i){
+        const search = new SMTS.ExtraSearch()
         const state = new State.NodeTree()
         const dnode = state
-        state.expand(0, 2, [[0,1,2,3,4]], "")
-        for (let k = 0; k < sim; ++k) search.run(dnode, state)
-        console.log(search.normalizedPositive(dnode.strategy0))
-        console.log(search.normalizedPositive(dnode.regret0))
-        console.log(search.normalizedPositive(dnode.strategy1))
-        console.log(search.normalizedPositive(dnode.regret1))
-        state.M.print()
+        const depth = 3
+        const actions = [[0,1,2,3]]
+        //console.log('generating tree', depth, actions.map(A=>A.length))
+        state.expand(0, depth, actions, "")
+
+        const configs = [[0,0], [0,1], [1,0], [1,1]]
+        for (let i = 0; i < 4; ++i) {
+            const config = configs[i]
+            //console.log('config', config)
+            for (let k = 0; k < sim; ++k){
+                search.runAverage(dnode, state, config)
+            }
+            const A = search.normalizedPositive(dnode.strategy0)
+            const B = search.normalizedPositive(dnode.strategy1)
+            const e = search.exploitability(state.M.arraySync(), A, B)
+            exploitabilitySums[i] += e
+            state.reset()
+        }
     }
+    for (let i = 0; i < 4; ++i) {
+        exploitabilitySums[i] /= n
+    }
+    console.log(exploitabilitySums)
 }
 
-main(10**0, 10**7)
+runAverageTest(100, 10**6)

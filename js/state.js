@@ -65,6 +65,7 @@ class NodeTree extends SMTS.DecisionNode {
     }
 
     reset(){
+        if(this.chance === null) return
         this.action0 = null
         this.action1 = null
         this.regret0 = null
