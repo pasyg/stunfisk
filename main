@@ -1,21 +1,23 @@
+let Dex = require('./pokemon-showdown/.sim-dist/dex')
 let BattleStreams = require('./pokemon-showdown/.sim-dist/battle-stream')
 let AI = require('./pokemon-showdown/.sim-dist/tools/random-player-ai')
+let UniformRandomTeams = require('./uniform-random-teams')
 
 function clean(obj){
     return Object.values(obj).filter(x => x!==Object(x))
 }
 
-function fastParse(battleStream){
+function parse(battleStream){
 
-    function fastParseMon(mon){
+    function parseMon(mon){
         let s = ""
-        s += `${mon.level},${mon.species.num},${mon.gender},${mon.hp},${mon.maxhp},${mon.status},${mon.item},${mon.ability}\n`
-        s += mon.moveSlots.map(move => `(${move.id} : ${move.pp})`).join(' ') + '\n'
-        s += Object.values(mon.storedStats).join(' ') + '\n'
+        s += `#${mon.level},${mon.species.num},${mon.gender},${mon.hp},${mon.maxhp},${mon.status},${mon.item},${mon.ability}\n`
+        s += mon.moveSlots.map(move => `${move.id},${move.pp}`).join(',') + '\n'
+        s += Object.values(mon.storedStats).join(',') + '\n'
         return s
     }
 
-    function fastParseTeam(pokemon){
+    function parseTeam(pokemon){
         let s = ""
         for (let i = 0 ; i < pokemon.length; ++i){
             let mon = pokemon[i]
@@ -23,57 +25,64 @@ function fastParse(battleStream){
                 s += JSON.stringify(Object.values(mon.volatiles).map(condition => clean(condition))) + '\n'
                 s += JSON.stringify((Object.values(mon.side.slotConditions[0]).map(condition => clean(condition)))) + '\n'
                 s += JSON.stringify(Object.values(mon.side.sideConditions).map(condition => clean(condition))) + '\n'
-                s += Object.values(mon.boosts).join(' ') + '\n'
+                s += Object.values(mon.boosts).join(',') + '\n'
             }
-            s += fastParseMon(mon)
+            s += parseMon(mon)
         }
         return s
     }
 
     const battle = battleStream.battle
-    let string = '%\n' //to be updated after 
+    let string = '%\n'
     string += JSON.stringify(clean(battle.field.weatherState)) + '\n'
-
-    string += fastParseTeam(battle.sides[0].pokemon)
+    string += parseTeam(battle.sides[0].pokemon)
     string += '|\n'
-    string += fastParseTeam(battle.sides[1].pokemon)
+    string += parseTeam(battle.sides[1].pokemon)
     string += Object.keys(battle.sides[0].activeRequest || []) + '\n'
     string += Object.keys(battle.sides[1].activeRequest || []) + '\n'
     return string
 }
 
 async function simulateBattle() {
-
     let battleStream = new BattleStreams.BattleStream()
     let streams = new BattleStreams.getPlayerStreams(battleStream)
     let q1 = new AI.RandomPlayerAI(streams.p1)
     let q2 = new AI.RandomPlayerAI(streams.p2)
     q1.start()
     q2.start()
+    const teams = new UniformRandomTeams.RandomGen3Teams('gen3randombattle')
+    const p1spec = {team : teams.randomTeam()}
+    const p2spec = {team : teams.randomTeam()}
+
     streams.omniscient.write('>start {"formatid" : "gen3randombattle"}\n')
-    streams.omniscient.write(`>player p1 {}\n`)
-    streams.omniscient.write(`>player p2 {}\n`)
+    streams.omniscient.write(`>player p1 ${JSON.stringify(p1spec)}\n`)
+    streams.omniscient.write(`>player p2 ${JSON.stringify(p2spec)}\n`)
 
-    let results = []
-
-    let showCounter = -1 //keep this for the display function?
-    results.push(fastParse(battleStream))
+    let states = []
+    let score = 0
+    let pushDelay = -1
+    states.push(parse(battleStream))
     for await (const chunk of streams.omniscient) {
-        if (showCounter > 0){
-            results.push(fastParse(battleStream))
-        }
-        showCounter += 1
+        if (pushDelay > 0) states.push(parse(battleStream))  
+        if (chunk.includes('|win|Player 1')) score = 'W'
+        if (chunk.includes('|win|Player 2')) score = 'L'
+        if (chunk.includes('|tie')) score = 'D'
+        pushDelay += 1
 	}
-    results.pop()
-    return results
-}
+    states.pop()
 
+    for(let i = 0; i < states.length; ++i){
+        let data = states[i]
+        data = score + data.slice(1, data.length)
+        states[i] = data
+    }
+    return states
+}
 
 void (async () => {
     data = []
-    for (let i = 0; i < 10**2; ++i){
-        //data = [...data, ...await simulateBattle()]
-        await simulateBattle()
+    for (let i = 0; i < 1; ++i){
+        data = [...data, ...await simulateBattle()]
     }
-    //console.log(...data)
+    console.log(...data)
 })()

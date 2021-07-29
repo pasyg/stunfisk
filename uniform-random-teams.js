@@ -199,5 +199,5 @@ var _dex = require('./pokemon-showdown/.sim-dist/dex');
 	}
 } exports.RandomGen3Teams = RandomGen3Teams;
 
-exports. default = RandomGen3Teams;
+exports.default = RandomGen3Teams;
  //# sourceMappingURL=sourceMaps/random-teams.js.map
