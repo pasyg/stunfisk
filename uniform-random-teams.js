@@ -34,24 +34,17 @@ var _dex = require('./pokemon-showdown/.sim-dist/dex');
 
 	randomItem() {
 		const validItems = [
-		'Aguav Berry',  'Apicot Berry', 'Aspear Berry',   
-		'Cheri Berry',  'Chesto Berry',   'Choice Band',
-		'Deep Sea Scale', 'Deep Sea Tooth',
-
-		'Figy Berry',   'Ganlon Berry',  
-		'Iapapa Berry',    
-		'Lax Incense',  'Leppa Berry',  'Liechi Berry',   'Lum Berry',
-		'Macho Brace',  'Mago Berry',     
-		'Mental Herb',    
-		'Oran Berry',     
-		'Pecha Berry',  'Persim Berry', 'Petaya Berry',  
-
-		'Rawst Berry',         
-		'Salac Berry',  'Sea Incense',  'Shell Bell',     'Silk Scarf',
-		'Sitrus Berry',        'Starf Berry',
-		
-		'White Herb',   'Wiki Berry',
-		'Pokeball', '',
+		'Aguav Berry', 'Apicot Berry', 'Aspear Berry',   
+		'Cheri Berry', 'Chesto Berry', 'Choice Band',
+		'Deep Sea Scale', 'Deep Sea Tooth', 'Figy Berry',
+		'Ganlon Berry', 'Iapapa Berry', 'Lax Incense',
+		'Leppa Berry', 'Liechi Berry', 'Lum Berry',
+		'Macho Brace', 'Mago Berry', 'Mental Herb',    
+		'Oran Berry', 'Pecha Berry', 'Persim Berry',
+		'Petaya Berry', 'Rawst Berry', 'Salac Berry',
+		'Sea Incense',  'Shell Bell',     'Silk Scarf',
+		'Sitrus Berry', 'Starf Berry', 'White Herb',
+		'Wiki Berry', 'Pokeball', ''
 		];
 		return validItems[validItems.length * Math.random() << 0];
 	}
@@ -198,6 +191,3 @@ var _dex = require('./pokemon-showdown/.sim-dist/dex');
 		return pokemon;
 	}
 } exports.RandomGen3Teams = RandomGen3Teams;
-
-exports.default = RandomGen3Teams;
- //# sourceMappingURL=sourceMaps/random-teams.js.map

@@ -11,7 +11,6 @@ class NodeGame extends SMTS.DecisionNode {
         this.matrixChance = null
         this.id = null
     }
-
     initialize(value, depth, actions, depthDecrement=[1], id='{}'){
         this.value = value
         this.actions = [[], []]
@@ -49,12 +48,16 @@ class NodeGame extends SMTS.DecisionNode {
         return [this.chance[a*n + b].decision[0], 0]
     }
     rollout(){
-        if (this.actions[0].length === 0){
-            return this.value
-        }
+        if (this.actions[0].length === 0) return this.value
         const a = Math.floor(Math.random() * this.actions[0].length)
         const b = Math.floor(Math.random() * this.actions[1].length)
         return this.transition(a, b)[0].rollout()
+    }
+    count(){
+        if (this.matrix === null) return 1
+        let c = 1
+        for (const cnode of this.chance) for (const dnode of cnode.decision) c += dnode.count()
+        return c
     }
     print(){
         if (this.matrix === null) return false
@@ -79,20 +82,22 @@ class NodeGame extends SMTS.DecisionNode {
         for (const cnode of this.chance) {
             cnode.X = 0
             cnode.n = 0
-            cnode.decision[0].resetSearchStats() //extend hash functionallity 
+            for (const dnode of cnode.decision) dnode.resetSearchStats()
         }
     }
 }
 
 const state = new NodeGame()
-state.initialize(0, 1, [[0, 1]])
-
+state.initialize(0, 5, [[0,1,2,3]], [1])
+console.log(state.count())
 const search = new SMTS.ExtraSearch()
-for(let j=0;j<10**1;++j){
-    for(let i=0;i<10**7;++i) search.run(state)
-    let x = [...state.matrixChance[0], ...state.matrixChance[1]].map(_=>Math.round(_*1000)/1000)
-    console.log(x.join(' '))
-    state.resetSearchStats()
-}
+let lambda = .5
+for(let i=0;i<10**6;++i) search.run(state, lambda)
+const [A, B] = [state.strategy0, state.strategy1].map(s=>search.normalizedPositive(s, 0))
+const [A_, B_] = [state.strategy0, state.strategy1].map(s=>search.removeUniformNoise(search.normalizedPositive(s, 0), lambda))
+
+console.log(state.matrix)
+console.log(search.exploitability(state.matrix, A, B))
+console.log(search.exploitability(state.matrix, A_, B_))
 
 module.exports = {NodeGame}

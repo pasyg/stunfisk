@@ -86,3 +86,6 @@ void (async () => {
     }
     console.log(...data)
 })()
+
+//TODO
+//truant bit not shown, no volatile showing
