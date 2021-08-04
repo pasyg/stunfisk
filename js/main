@@ -1,2 +1,32 @@
-const SMTS = require("./SMTS")
-const State = require("./State")
+process.env['max_old_space_size'] = '4096'
+
+const SMTS = require('./SMTS')
+const State = require('./State')
+
+function round(x, n) {return Math.round(x*10**n)/10**n}
+
+for (let d = 6; d < 7; d += 1) {
+    const depth = d
+    for (let v = 0; v < 1; ++v) {
+        const value = 1 - 2 * Math.random()
+
+        const search = new SMTS.NodeGameSearch()
+        const state = new State.NodeGamePure()
+        state.initialize(value, depth, [ [0,1], [0,1], [0,1,2], [0,1,2], [0,1,2], [0,1,2,3] ])
+
+        for (let t = 0; t < 4; ++t){
+            const seconds = 2**t
+            const lambda = .1
+            console.log('(d, v, t) : ', depth, round(value, 2), seconds)
+
+            let dataEXP3 = search.runTimer(state, search.selectEXP3, search.updateEXP3, lambda, seconds)
+            console.log('(expl, explUniformNoise, sim) : \n', dataEXP3[2], dataEXP3[3], dataEXP3[4], 'exp3')
+            state.resetSearchStats()
+
+            let dataRegretMatch = search.runTimer(state, search.selectRegretMatch, search.updateRegretMatch, lambda, seconds)
+            console.log('(expl, explUniformNoise, sim) : \n', dataRegretMatch[2], dataRegretMatch[3], dataRegretMatch[4], 'RegretMatch')
+            state.resetSearchStats()
+
+        }
+    }
+}
